@@ -1,0 +1,23 @@
+{
+  "name": "project-task-management-system",
+  "version": "1.0.0",
+  "description": "Sistema de Gerenciamento de Projetos e Tarefas - Atividade de Recuperação Residência Tecnológica V",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "test": "node verify.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pdfkit": "^0.16.0",
+    "sqlite3": "^5.1.7"
+  }
+}
