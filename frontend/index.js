@@ -1205,11 +1205,10 @@ function setupEventListeners() {
         try {
             if (isRegistering) {
                 const nome = document.getElementById('auth-nome').value;
-                const perfil = document.getElementById('auth-perfil').value;
                 const res = await fetch(`${API_BASE}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, senha, perfil })
+                    body: JSON.stringify({ nome, email, senha })
                 });
 
                 if (res.ok) {
@@ -1381,7 +1380,7 @@ function toggleAuthMode(toRegister) {
 
     if (toRegister) {
         groupNome.style.display = 'block';
-        groupPerfil.style.display = 'block';
+        groupPerfil.style.display = 'none';
         authTitle.textContent = 'Crie sua conta';
         authSubmit.textContent = 'Cadastrar Usuário';
         toggleText.innerHTML = 'Já possui uma conta? <a href="#" id="auth-toggle-link">Entre aqui</a>';

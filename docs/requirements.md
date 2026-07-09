@@ -15,7 +15,7 @@ Este documento contém os requisitos funcionais (RF), requisitos não funcionais
 | **RF05** | O sistema deve permitir o gerenciamento (CRUD) de tarefas. | Implementado (Permissão de escrita para Gerente/Admin, leitura para Usuário) |
 | **RF06** | O sistema deve permitir atribuir responsáveis às tarefas. | Implementado (Atribuição a um usuário cadastrado no sistema) |
 | **RF07** | O sistema deve permitir atualizar o status das tarefas. | Implementado (Opções: *A Fazer*, *Em Andamento* e *Concluída*) |
-| **RF08** | O sistema deve enviar alertas por e-mail. | Implementado (Simulador de envio de e-mails para tarefas vencidas ou próximas do prazo) |
+| **RF08** | O sistema deve enviar alertas por e-mail. | Implementado (envio via SMTP para tarefas vencidas ou próximas do prazo, com log de auditoria) |
 | **RF09** | O sistema deve gerar relatórios em PDF. | Implementado (Download de PDF dinâmico com estatísticas de progresso, tarefas e equipe) |
 | **RF10** | O sistema deve apresentar um dashboard com indicadores. | Implementado (Indicadores visuais de status com gráficos Chart.js e alertas de urgência) |
 

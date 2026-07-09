@@ -57,7 +57,7 @@ app.post('/api/tasks', authenticateToken, requireRole(['administrador', 'gerente
 app.put('/api/tasks/:id', authenticateToken, taskController.update); // Internamente valida o perfil do usuário
 app.delete('/api/tasks/:id', authenticateToken, requireRole(['administrador', 'gerente']), taskController.remove);
 
-// 5. Alertas de E-mail (Simulados)
+// 5. Alertas de E-mail
 app.get('/api/notifications', authenticateToken, taskController.getEmailLogs);
 app.post('/api/notifications/check', authenticateToken, taskController.checkAlertsManual);
 

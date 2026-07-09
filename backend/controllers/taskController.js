@@ -2,8 +2,62 @@
 const { dbRun, dbGet, dbAll } = require('../database');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const emailsLogPath = path.join(__dirname, '../../database/emails_sent.json');
+
+function isValidStatus(status) {
+    return ['A Fazer', 'Em Andamento', 'Concluída'].includes(status);
+}
+
+async function isProjectMember(projetoId, usuarioId) {
+    if (!usuarioId) return true;
+    const membership = await dbGet(
+        'SELECT 1 FROM projeto_usuarios WHERE projeto_id = ? AND usuario_id = ?',
+        [projetoId, usuarioId]
+    );
+    return Boolean(membership);
+}
+
+function createEmailTransporter() {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
+    });
+}
+
+async function sendAlertEmail({ to, subject, text }) {
+    const transporter = createEmailTransporter();
+    if (!transporter) {
+        return {
+            sent: false,
+            status: 'nao_enviado_configuracao_smtp_ausente',
+            info: 'Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM para enviar e-mails reais.'
+        };
+    }
+
+    const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to,
+        subject,
+        text
+    });
+
+    return {
+        sent: true,
+        status: 'enviado',
+        messageId: info.messageId
+    };
+}
 
 // Garantir arquivo de log de emails
 function logEmailSent(emailData) {
@@ -128,8 +182,15 @@ async function create(req, res) {
             return res.status(400).json({ message: 'Projeto associado não encontrado.' });
         }
 
-        // Inserir tarefa
         const taskStatus = status || 'A Fazer';
+        if (!isValidStatus(taskStatus)) {
+            return res.status(400).json({ message: 'Status inválido.' });
+        }
+
+        if (!(await isProjectMember(projeto_id, responsavel_id))) {
+            return res.status(400).json({ message: 'Responsável deve estar vinculado ao projeto.' });
+        }
+
         const result = await dbRun(
             `INSERT INTO tarefas (projeto_id, titulo, descricao, responsavel_id, status, prazo) 
              VALUES (?, ?, ?, ?, ?, ?)`,
@@ -159,22 +220,16 @@ async function update(req, res) {
 
         // Controle de Acesso por Perfil
         if (req.user.perfil === 'usuario') {
-            // Usuário comum pode apenas atualizar o status das tarefas do seu projeto
+            // Usuario comum pode apenas atualizar o status das proprias tarefas.
             if (status === undefined) {
                 return res.status(403).json({ message: 'Usuários comuns só podem atualizar o status da tarefa.' });
             }
 
-            // Verificar se o usuário participa do projeto da tarefa
-            const checkParticipant = await dbGet(
-                'SELECT 1 FROM projeto_usuarios WHERE projeto_id = ? AND usuario_id = ?',
-                [task.projeto_id, req.user.id]
-            );
-            if (!checkParticipant) {
-                return res.status(403).json({ message: 'Você não tem permissão neste projeto.' });
+            if (task.responsavel_id !== req.user.id) {
+                return res.status(403).json({ message: 'Você só pode atualizar tarefas atribuídas a você.' });
             }
 
-            // Atualizar APENAS o status
-            if (!['A Fazer', 'Em Andamento', 'Concluída'].includes(status)) {
+            if (!isValidStatus(status)) {
                 return res.status(400).json({ message: 'Status inválido.' });
             }
 
@@ -187,8 +242,12 @@ async function update(req, res) {
             }
 
             const taskStatus = status || task.status;
-            if (!['A Fazer', 'Em Andamento', 'Concluída'].includes(taskStatus)) {
+            if (!isValidStatus(taskStatus)) {
                 return res.status(400).json({ message: 'Status inválido.' });
+            }
+
+            if (!(await isProjectMember(task.projeto_id, responsavel_id))) {
+                return res.status(400).json({ message: 'Responsável deve estar vinculado ao projeto.' });
             }
 
             await dbRun(
@@ -237,7 +296,7 @@ function getEmailLogs(req, res) {
     }
 }
 
-// Função auxiliar para verificar tarefas atrasadas/próximas e enviar "e-mails"
+// Função auxiliar para verificar tarefas atrasadas/próximas e enviar e-mails
 async function triggerEmailAlertsSilently() {
     // Carregar todas as tarefas não concluídas com seus respectivos responsáveis
     const tasks = await dbAll(`
@@ -289,7 +348,21 @@ async function triggerEmailAlertsSilently() {
             // Verificar se já enviamos esse tipo de alerta para essa tarefa hoje
             const alreadySent = newHistory.some(h => h.taskId === task.id && h.type === warningType && h.data === todayStr);
             if (!alreadySent) {
-                // Logar o email (simula o envio de e-mail)
+                let delivery;
+                try {
+                    delivery = await sendAlertEmail({
+                        to: task.responsavel_email,
+                        subject,
+                        text: message
+                    });
+                } catch (err) {
+                    delivery = {
+                        sent: false,
+                        status: 'erro_envio',
+                        info: err.message
+                    };
+                }
+
                 logEmailSent({
                     tarefa_id: task.id,
                     titulo: task.titulo,
@@ -298,7 +371,11 @@ async function triggerEmailAlertsSilently() {
                     email: task.responsavel_email,
                     assunto: subject,
                     mensagem: message,
-                    tipo: warningType
+                    tipo: warningType,
+                    status_envio: delivery.status,
+                    enviado: delivery.sent,
+                    message_id: delivery.messageId || null,
+                    detalhe_envio: delivery.info || null
                 });
 
                 // Registrar no histórico de envios do dia
