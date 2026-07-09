@@ -7,6 +7,9 @@ database/*.sqlite
 database/*.json
 
 # Logs e arquivos de debug
+.env
+.env.*
+!.env.example
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

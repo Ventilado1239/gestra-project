@@ -35,6 +35,7 @@ O sistema é uma aplicação web completa (SPA no frontend com API REST no backe
   - **JWT (jsonwebtoken)** para controle de sessões e autenticação
   - **Bcrypt.js** para criptografia unidirecional segura de senhas
   - **Nodemailer** para envio real de alertas por e-mail via SMTP
+  - **Dotenv** para configuração segura por variáveis de ambiente
   - **PDFKit** para geração dinâmica de PDFs
   - **Cookie-Parser & Cors** para gerenciamento de cookies e requisições cruzadas
 * **Banco de Dados:**
@@ -62,6 +63,7 @@ project_management_system/
 │   └── database.sqlite             # Arquivo do BD (gerado no primeiro boot)
 ├── docs/
 │   ├── database_model.md           # Modelagem de dados e diagramas ERD
+│   ├── delivery_checklist.md       # Mapa dos requisitos exigidos na entrega
 │   ├── requirements.md             # Requisitos e Histórias de Usuário
 │   └── video_guide.md              # Roteiro passo a passo para gravação do vídeo
 ├── frontend/
@@ -69,6 +71,7 @@ project_management_system/
 │   ├── index.css                   # Estilização premium responsiva e temas
 │   └── index.js                    # Roteador SPA, formulários e Chart.js
 ├── verify.js                       # Script de testes automatizados do backend
+├── .env.example                    # Exemplo de configuração SMTP
 ├── package.json                    # Dependências e scripts npm
 └── README.md                       # Documentação principal do projeto
 ```
@@ -114,15 +117,22 @@ npm start
 *Ao fazer isso, o console exibirá as mensagens confirmando a conexão com o banco, aplicação do schema SQL e a inicialização do servidor HTTP.*
 
 ### Configuração de E-mail SMTP
-Para enviar alertas reais por e-mail, configure as variáveis de ambiente abaixo antes de iniciar o servidor:
+O projeto já inclui um `.env.example` com a configuração recomendada. Para demonstração local, use:
+```bash
+SMTP_MODE=ethereal
+```
+Com esse modo, o Nodemailer cria uma caixa SMTP temporária da Ethereal e o sistema mostra na tela de **Alertas de E-mail** um link de pré-visualização da mensagem enviada.
+
+Para enviar por um provedor real, configure as variáveis de ambiente abaixo antes de iniciar o servidor:
 ```bash
 SMTP_HOST=smtp.seuprovedor.com
 SMTP_PORT=587
+SMTP_SECURE=false
 SMTP_USER=usuario_smtp
 SMTP_PASS=senha_smtp
 SMTP_FROM=Gestra <usuario_smtp>
 ```
-Se essas variáveis não forem informadas, o sistema mantém o log de auditoria e marca o alerta como não enviado por falta de configuração SMTP.
+Se `SMTP_MODE=ethereal` estiver ativo, o sistema usa Ethereal mesmo sem credenciais reais. Em produção, configure um provedor SMTP real.
 
 ### Passo 5: Acessar no Navegador
 Abra o navegador de sua preferência e navegue até:

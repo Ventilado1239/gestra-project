@@ -15,7 +15,7 @@ Este documento contém os requisitos funcionais (RF), requisitos não funcionais
 | **RF05** | O sistema deve permitir o gerenciamento (CRUD) de tarefas. | Implementado (Permissão de escrita para Gerente/Admin, leitura para Usuário) |
 | **RF06** | O sistema deve permitir atribuir responsáveis às tarefas. | Implementado (Atribuição a um usuário cadastrado no sistema) |
 | **RF07** | O sistema deve permitir atualizar o status das tarefas. | Implementado (Opções: *A Fazer*, *Em Andamento* e *Concluída*) |
-| **RF08** | O sistema deve enviar alertas por e-mail. | Implementado (envio via SMTP para tarefas vencidas ou próximas do prazo, com log de auditoria) |
+| **RF08** | O sistema deve enviar alertas por e-mail. | Implementado (envio via SMTP real ou Ethereal em demonstração para tarefas vencidas ou próximas do prazo, com log de auditoria) |
 | **RF09** | O sistema deve gerar relatórios em PDF. | Implementado (Download de PDF dinâmico com estatísticas de progresso, tarefas e equipe) |
 | **RF10** | O sistema deve apresentar um dashboard com indicadores. | Implementado (Indicadores visuais de status com gráficos Chart.js e alertas de urgência) |
 
@@ -75,7 +75,7 @@ Este documento contém os requisitos funcionais (RF), requisitos não funcionais
 * **Como** usuário responsável por tarefas,
 * **quero** receber alertas por e-mail quando minhas tarefas estiverem atrasadas ou próximas de vencer (2 dias ou menos),
 * **para** eu não perder prazos e agir rapidamente.
-* *Critérios de Aceitação:* O sistema gera alertas automaticamente ao consultar demandas e guarda um log estruturado contendo dados do destinatário, assunto, corpo do e-mail e data. O sistema previne envios duplicados de alertas para o mesmo estado da tarefa no mesmo dia.
+* *Critérios de Aceitação:* O sistema gera alertas automaticamente ao consultar demandas, envia por SMTP real ou Ethereal em ambiente de demonstração, guarda um log estruturado contendo dados do destinatário, assunto, corpo do e-mail, status do envio e data. O sistema previne envios duplicados de alertas para o mesmo estado da tarefa no mesmo dia.
 
 ### **HU08: Relatório de Acompanhamento**
 * **Como** Gerente de Projeto ou Administrador,

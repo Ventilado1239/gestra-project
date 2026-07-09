@@ -662,6 +662,13 @@ function renderNotifications() {
 
     state.notifications.forEach(log => {
         const dateStr = new Date(log.enviado_em).toLocaleString('pt-BR');
+        const statusLabel = log.enviado
+            ? (log.provedor_envio === 'ethereal' ? 'Enviado via Ethereal' : 'Enviado via SMTP')
+            : 'Não enviado';
+        const statusClass = log.enviado ? 'email-delivery-success' : 'email-delivery-error';
+        const previewLink = log.preview_url
+            ? `<a class="email-preview-link" href="${escapeHTML(log.preview_url)}" target="_blank" rel="noopener">Ver prévia do e-mail</a>`
+            : '';
         const div = document.createElement('div');
         div.className = `email-item ${log.tipo}`;
         div.innerHTML = `
@@ -672,6 +679,9 @@ function renderNotifications() {
             <div class="email-meta-details">
                 <span><strong>Para:</strong> ${escapeHTML(log.responsavel)} &lt;${escapeHTML(log.email)}&gt;</span>
                 <span><strong>Projeto:</strong> ${escapeHTML(log.projeto)}</span>
+                <span><strong>Envio:</strong> <span class="${statusClass}">${statusLabel}</span>${log.message_id ? ` · ID: ${escapeHTML(log.message_id)}` : ''}</span>
+                ${log.detalhe_envio ? `<span><strong>Detalhe:</strong> ${escapeHTML(log.detalhe_envio)}</span>` : ''}
+                ${previewLink}
             </div>
             <div class="email-body">
                 ${escapeHTML(log.mensagem)}
