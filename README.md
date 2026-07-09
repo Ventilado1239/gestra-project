@@ -17,7 +17,7 @@ O sistema é uma aplicação web completa (SPA no frontend com API REST no backe
 * **CRUD de Tarefas:** Criação de atividades com títulos, descrições detalhadas, datas de vencimento (prazo) e responsáveis designados.
 * **Quadro Kanban Interativo:** Visualização de tarefas divididas em colunas (*A Fazer*, *Em Andamento* e *Concluída*) com atualização rápida de status diretamente nos cards.
 * **Dashboard Analítico:** Painel com cartões indicadores (projetos, tarefas, atrasadas) e gráfico doughnut dinâmico utilizando Chart.js.
-* **Alertas Automatizados por E-mail (Simulado):** Rastreia tarefas próximas do vencimento (2 dias ou menos) ou atrasadas, gerando e-mails de alerta e guardando logs detalhados para auditoria na interface.
+* **Alertas Automatizados por E-mail:** Rastreia tarefas próximas do vencimento (2 dias ou menos) ou atrasadas, envia alertas por SMTP aos responsáveis e guarda logs detalhados para auditoria na interface.
 * **Relatório Consolidado em PDF:** Geração e download em tempo real de relatórios formatados contendo dados do progresso, equipe participante e lista de atividades do projeto.
 
 ---
@@ -34,6 +34,7 @@ O sistema é uma aplicação web completa (SPA no frontend com API REST no backe
   - **Node.js** com **Express.js** (Servidor HTTP e API REST)
   - **JWT (jsonwebtoken)** para controle de sessões e autenticação
   - **Bcrypt.js** para criptografia unidirecional segura de senhas
+  - **Nodemailer** para envio real de alertas por e-mail via SMTP
   - **PDFKit** para geração dinâmica de PDFs
   - **Cookie-Parser & Cors** para gerenciamento de cookies e requisições cruzadas
 * **Banco de Dados:**
@@ -111,6 +112,17 @@ Execute o comando de inicialização da aplicação:
 npm start
 ```
 *Ao fazer isso, o console exibirá as mensagens confirmando a conexão com o banco, aplicação do schema SQL e a inicialização do servidor HTTP.*
+
+### Configuração de E-mail SMTP
+Para enviar alertas reais por e-mail, configure as variáveis de ambiente abaixo antes de iniciar o servidor:
+```bash
+SMTP_HOST=smtp.seuprovedor.com
+SMTP_PORT=587
+SMTP_USER=usuario_smtp
+SMTP_PASS=senha_smtp
+SMTP_FROM=Gestra <usuario_smtp>
+```
+Se essas variáveis não forem informadas, o sistema mantém o log de auditoria e marca o alerta como não enviado por falta de configuração SMTP.
 
 ### Passo 5: Acessar no Navegador
 Abra o navegador de sua preferência e navegue até:

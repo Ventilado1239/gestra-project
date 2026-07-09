@@ -3,6 +3,23 @@
 
 const { initializeDatabase, dbGet, dbAll } = require('./backend/database');
 const bcrypt = require('bcryptjs');
+const authController = require('./backend/controllers/authController');
+const taskController = require('./backend/controllers/taskController');
+
+function mockResponse() {
+    return {
+        statusCode: 200,
+        body: null,
+        status(code) {
+            this.statusCode = code;
+            return this;
+        },
+        json(payload) {
+            this.body = payload;
+            return this;
+        }
+    };
+}
 
 async function runTests() {
     console.log('=== Iniciando Testes de Validação do Sistema ===');
@@ -65,6 +82,63 @@ async function runTests() {
             console.log('✔ Validação do hash com bcrypt.compare sucedida.');
         } else {
             throw new Error('❌ Falha: Falha ao descriptografar senha semeada.');
+        }
+
+        // 5. Verificar regras de segurança de cadastro e tarefas
+        console.log('\n[Teste 5] Validando regras de perfil e tarefas...');
+
+        const registerRes = mockResponse();
+        const uniqueEmail = `teste_publico_${Date.now()}@sistema.com`;
+        await authController.register({
+            body: {
+                nome: 'Teste Publico',
+                email: uniqueEmail,
+                senha: 'senhateste',
+                perfil: 'administrador'
+            }
+        }, registerRes);
+
+        const publicUser = await dbGet('SELECT perfil FROM usuarios WHERE email = ?', [uniqueEmail]);
+        if (registerRes.statusCode === 201 && publicUser && publicUser.perfil === 'usuario') {
+            console.log('✔ Cadastro público sempre cria perfil usuario.');
+        } else {
+            throw new Error('❌ Falha: cadastro público aceitou perfil privilegiado.');
+        }
+
+        const projectOnlyManager = await dbGet("SELECT id FROM projetos WHERE nome = 'Campanha de Marketing Q3'");
+        const createTaskRes = mockResponse();
+        await taskController.create({
+            body: {
+                projeto_id: projectOnlyManager.id,
+                titulo: 'Teste de Responsável Inválido',
+                descricao: 'Não deve criar tarefa para usuário fora do projeto.',
+                responsavel_id: regularUser.id,
+                status: 'A Fazer',
+                prazo: new Date().toISOString().split('T')[0]
+            }
+        }, createTaskRes);
+
+        if (createTaskRes.statusCode === 400) {
+            console.log('✔ Tarefa rejeita responsável que não participa do projeto.');
+        } else {
+            throw new Error('❌ Falha: tarefa aceitou responsável fora do projeto.');
+        }
+
+        const someoneElsesTask = await dbGet(
+            "SELECT id FROM tarefas WHERE responsavel_id != ? AND projeto_id IN (SELECT projeto_id FROM projeto_usuarios WHERE usuario_id = ?) LIMIT 1",
+            [regularUser.id, regularUser.id]
+        );
+        const updateTaskRes = mockResponse();
+        await taskController.update({
+            params: { id: someoneElsesTask.id },
+            body: { status: 'Concluída' },
+            user: regularUser
+        }, updateTaskRes);
+
+        if (updateTaskRes.statusCode === 403) {
+            console.log('✔ Usuário comum só atualiza tarefas atribuídas a ele.');
+        } else {
+            throw new Error('❌ Falha: usuário comum alterou tarefa de outro responsável.');
         }
 
         console.log('\n=============================================');

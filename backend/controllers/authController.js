@@ -5,18 +5,15 @@ const { dbRun, dbGet } = require('../database');
 const { JWT_SECRET } = require('../middleware/authMiddleware');
 
 async function register(req, res) {
-    const { nome, email, senha, perfil } = req.body;
+    const { nome, email, senha } = req.body;
 
     // Validação de campos obrigatórios
     if (!nome || !email || !senha) {
         return res.status(400).json({ message: 'Nome, email e senha são obrigatórios.' });
     }
 
-    // Validar perfil
-    const userPerfil = perfil || 'usuario';
-    if (!['administrador', 'gerente', 'usuario'].includes(userPerfil)) {
-        return res.status(400).json({ message: 'Perfil inválido. Deve ser administrador, gerente ou usuario.' });
-    }
+    // Cadastro publico sempre cria usuario comum.
+    const userPerfil = 'usuario';
 
     try {
         // Verificar se usuário já existe
