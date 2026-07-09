@@ -5,6 +5,8 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 
 const emailsLogPath = path.join(__dirname, '../../database/emails_sent.json');
+let cachedTransporter = null;
+let cachedTransportMode = null;
 
 function isValidStatus(status) {
     return ['A Fazer', 'Em Andamento', 'Concluída'].includes(status);
@@ -19,29 +21,64 @@ async function isProjectMember(projetoId, usuarioId) {
     return Boolean(membership);
 }
 
-function createEmailTransporter() {
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        return null;
+async function createEmailTransporter() {
+    if (cachedTransporter) {
+        return {
+            transporter: cachedTransporter,
+            mode: cachedTransportMode
+        };
     }
 
-    return nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
-    });
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        cachedTransporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 587),
+            secure: process.env.SMTP_SECURE === 'true',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+        cachedTransportMode = 'smtp';
+        return {
+            transporter: cachedTransporter,
+            mode: cachedTransportMode
+        };
+    }
+
+    if (process.env.SMTP_MODE === 'ethereal' || process.env.NODE_ENV !== 'production') {
+        const testAccount = await nodemailer.createTestAccount();
+        cachedTransporter = nodemailer.createTransport({
+            host: testAccount.smtp.host,
+            port: testAccount.smtp.port,
+            secure: testAccount.smtp.secure,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass
+            }
+        });
+        cachedTransportMode = 'ethereal';
+        console.log(`SMTP de demonstração Ethereal ativo: ${testAccount.user}`);
+        return {
+            transporter: cachedTransporter,
+            mode: cachedTransportMode
+        };
+    }
+
+    return {
+        transporter: null,
+        mode: 'unconfigured'
+    };
 }
 
 async function sendAlertEmail({ to, subject, text }) {
-    const transporter = createEmailTransporter();
+    const { transporter, mode } = await createEmailTransporter();
     if (!transporter) {
         return {
             sent: false,
             status: 'nao_enviado_configuracao_smtp_ausente',
-            info: 'Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM para enviar e-mails reais.'
+            provider: mode,
+            info: 'Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS e SMTP_FROM, ou use SMTP_MODE=ethereal para demonstração.'
         };
     }
 
@@ -54,8 +91,10 @@ async function sendAlertEmail({ to, subject, text }) {
 
     return {
         sent: true,
-        status: 'enviado',
-        messageId: info.messageId
+        status: mode === 'ethereal' ? 'enviado_ethereal' : 'enviado_smtp',
+        provider: mode,
+        messageId: info.messageId,
+        previewUrl: nodemailer.getTestMessageUrl(info) || null
     };
 }
 
@@ -359,6 +398,7 @@ async function triggerEmailAlertsSilently() {
                     delivery = {
                         sent: false,
                         status: 'erro_envio',
+                        provider: 'erro',
                         info: err.message
                     };
                 }
@@ -374,7 +414,9 @@ async function triggerEmailAlertsSilently() {
                     tipo: warningType,
                     status_envio: delivery.status,
                     enviado: delivery.sent,
+                    provedor_envio: delivery.provider,
                     message_id: delivery.messageId || null,
+                    preview_url: delivery.previewUrl || null,
                     detalhe_envio: delivery.info || null
                 });
 

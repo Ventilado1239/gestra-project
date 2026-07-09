@@ -62,7 +62,8 @@ Este documento serve como um roteiro prático para que você grave o vídeo de d
 ### **Parte 5: Alertas de E-mail (30 segundos)**
 1. Faça login com qualquer perfil e vá na aba **Alertas de E-mail**.
 2. Clique no botão **Verificar e Disparar Alertas**.
-3. Mostre o log de notificações gerado com o alerta de tarefa atrasada ou próxima do vencimento, incluindo o status de envio por SMTP.
+3. Mostre o log de notificações gerado com o alerta de tarefa atrasada ou próxima do vencimento, incluindo o status **Enviado via SMTP** ou **Enviado via Ethereal**.
+4. Se estiver usando `SMTP_MODE=ethereal`, clique em **Ver prévia do e-mail** para mostrar a mensagem aberta no navegador. Esse link comprova que o e-mail foi realmente processado por um servidor SMTP de teste.
 
 ---
 

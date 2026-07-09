@@ -1100,7 +1100,27 @@ input:focus, select:focus, textarea:focus {
     color: var(--text-secondary);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+}
+
+.email-delivery-success {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.email-delivery-error {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.email-preview-link {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.email-preview-link:hover {
+    text-decoration: underline;
 }
 
 .email-body {
